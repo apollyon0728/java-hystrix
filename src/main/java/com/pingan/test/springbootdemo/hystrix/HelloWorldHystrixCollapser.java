@@ -13,17 +13,22 @@ import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixCommand.Setter;
 
 /**
+ * HelloWorldHystrixCollapser类用于演示如何使用Hystrix进行请求合并
+ * 它扩展了HystrixCollapser，将多个单独的请求合并为一个批处理请求，以减少网络调用次数
+ * <p>
  * Sample {@link HystrixCollapser} that automatically batches multiple requests to execute()/queue()
  * into a single {@link HystrixCommand} execution for all requests within the defined batch (time or size).
  */
 public class HelloWorldHystrixCollapser extends HystrixCollapser<List<String>, String, Integer> {
 
-    private final Integer key;
+    private final Integer key; // 请求的键，用于标识每个请求
 
+    // 构造函数，初始化请求的键
     public HelloWorldHystrixCollapser(Integer key) {
         this.key = key;
     }
 
+    // 返回请求的参数，用于识别每个单独的请求
     @Override
     public Integer getRequestArgument() {
         return key;
@@ -44,19 +49,21 @@ public class HelloWorldHystrixCollapser extends HystrixCollapser<List<String>, S
         }
     }
 
-    // command类
+    // command类，用于处理批量请求
     private static final class BatchCommand extends HystrixCommand<List<String>> {
-        private final Collection<CollapsedRequest<String, Integer>> requests;
+        private final Collection<CollapsedRequest<String, Integer>> requests; // 批量请求集合
 
+        // 构造函数，初始化批量请求集合
         private BatchCommand(Collection<CollapsedRequest<String, Integer>> requests) {
             super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey("CollepsingGroup"))
                     .andCommandKey(HystrixCommandKey.Factory.asKey("CollepsingKey")));
             this.requests = requests;
         }
 
+        // 执行批量请求，处理每个请求并返回结果
         @Override
         protected List<String> run() {
-            ArrayList<String> response = new ArrayList<String>();
+            ArrayList<String> response = new ArrayList<String>(); // 用于存储所有请求的响应
             // 处理每个请求，返回结果
             for (CollapsedRequest<String, Integer> request : requests) {
                 // artificial response for each argument received in the batch
@@ -66,3 +73,4 @@ public class HelloWorldHystrixCollapser extends HystrixCollapser<List<String>, S
         }
     }
 }
+
